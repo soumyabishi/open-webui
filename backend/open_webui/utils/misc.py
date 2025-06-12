@@ -74,12 +74,12 @@ def get_last_user_message_item(messages: list[dict]) -> Optional[dict]:
 
 
 def get_content_from_message(message: dict) -> Optional[str]:
-    if isinstance(message["content"], list):
+    if isinstance(message.get("content"), list):
         for item in message["content"]:
             if item["type"] == "text":
                 return item["text"]
     else:
-        return message["content"]
+        return message.get("content")
     return None
 
 
@@ -208,6 +208,7 @@ def openai_chat_message_template(model: str):
 def openai_chat_chunk_message_template(
     model: str,
     content: Optional[str] = None,
+    reasoning_content: Optional[str] = None,
     tool_calls: Optional[list[dict]] = None,
     usage: Optional[dict] = None,
 ) -> dict:
@@ -219,6 +220,9 @@ def openai_chat_chunk_message_template(
 
     if content:
         template["choices"][0]["delta"]["content"] = content
+
+    if reasoning_content:
+        template["choices"][0]["delta"]["reasoning_content"] = reasoning_content
 
     if tool_calls:
         template["choices"][0]["delta"]["tool_calls"] = tool_calls
@@ -234,6 +238,7 @@ def openai_chat_chunk_message_template(
 def openai_chat_completion_message_template(
     model: str,
     message: Optional[str] = None,
+    reasoning_content: Optional[str] = None,
     tool_calls: Optional[list[dict]] = None,
     usage: Optional[dict] = None,
 ) -> dict:
@@ -241,8 +246,9 @@ def openai_chat_completion_message_template(
     template["object"] = "chat.completion"
     if message is not None:
         template["choices"][0]["message"] = {
-            "content": message,
             "role": "assistant",
+            "content": message,
+            **({"reasoning_content": reasoning_content} if reasoning_content else {}),
             **({"tool_calls": tool_calls} if tool_calls else {}),
         }
 
